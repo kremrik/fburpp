@@ -1,0 +1,12 @@
+.mypy_cache
+.vscode
+*/__pycache__
+.pytest_cache
+__pycache__
+htmlcov
+.coverage
+sphinx/build
+*.db
+tmp
+*.csv
+.json
