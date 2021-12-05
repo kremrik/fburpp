@@ -1,7 +1,13 @@
-use csv::StringRecord;
+use csv;
 
 use std::error::Error;
-use std::io;
+
+
+#[derive(Debug)]
+pub struct Field<'f> {
+    name: &'f str,
+    value: Value,
+}
 
 #[derive(Debug)]
 pub enum Value {
@@ -9,7 +15,48 @@ pub enum Value {
     Int(i64),
 }
 
-fn map_type(value: &str, given_type: &str) -> Value {
+type Row<'r> = Vec<Field<'r>>;
+type Frame<'f> = Vec<Row<'f>>;
+
+pub fn reader<'r>(
+    path: &str,
+    col_names: &'r Vec<&str>,
+    col_types: &'r Vec<&str>,
+) -> Result<Frame<'r>, Box<dyn Error>> {
+    let mut rdr = csv::Reader::from_path(path)?;
+    let mut data: Frame = Vec::new();
+
+    for result in rdr.records() {
+        let record = result?;
+        let row = make_row(record, col_names, col_types);
+        data.push(row);
+    }
+
+    Ok(data)
+}
+
+fn make_row<'r>(
+    record: csv::StringRecord,
+    col_names: &'r Vec<&str>,
+    col_types: &'r Vec<&str>,
+) -> Row<'r> {
+    let mut row: Row = Vec::new();
+
+    let val_name_typ = record.iter().zip(col_names.iter()).zip(col_types.iter());
+    for ((val, name), typ) in val_name_typ {
+        let value = make_value(val, typ);
+        let field = make_field(&name, value);
+        row.push(field);
+    }
+
+    row
+}
+
+fn make_field<'f>(name: &'f str, value: Value) -> Field<'f> {
+    Field { name: name, value: value}
+}
+
+fn make_value(value: &str, given_type: &str) -> Value {
     match given_type {
         "str" => Value::Str(value.to_string()),
         "int" => {
@@ -18,33 +65,4 @@ fn map_type(value: &str, given_type: &str) -> Value {
         },
         _ => Value::Str(value.to_string())
     }
-}
-
-fn map_schema(
-    record: StringRecord,
-    schema: &Vec<&str>,
-) -> Vec<Value> {
-    let mut row: Vec<Value> = Vec::new();
-    
-    let val_typ = record.iter().zip(schema.iter());
-    for (val, typ) in val_typ {
-        let r = map_type(val, typ);
-        row.push(r);
-    }
-
-    row
-}
-
-pub fn reader(
-    schema: &Vec<&str>
-) -> Result<Vec<Vec<Value>>, Box<dyn Error>> {
-    let mut data: Vec<Vec<Value>> = Vec::new();
-
-    let mut rdr = csv::Reader::from_reader(io::stdin());
-    for result in rdr.records() {
-        let record = result?;
-        let values = map_schema(record, &schema);
-        data.push(values);
-    }
-    Ok(data)
 }
