@@ -35,6 +35,29 @@ pub fn reader<'r>(
     Ok(data)
 }
 
+pub fn writer<'w>(
+    path: &str, frame: Frame<'w>
+) -> Result<(), Box<dyn Error>> {
+    let mut wtr = csv::Writer::from_path(path)?;
+
+    for row in frame {
+        let mut out_rec: Vec<String> = Vec::new();
+
+        for field in row {
+            let val = field.value;
+            let val_as_str = match val {
+                Value::Int(v) => v.to_string(),
+                Value::Str(v) => v,
+            };
+            out_rec.push(val_as_str);
+        }
+
+        wtr.write_record(out_rec)?;
+    }
+
+    Ok(())
+}
+
 fn make_row<'r>(
     record: csv::StringRecord,
     col_names: &'r Vec<&str>,
