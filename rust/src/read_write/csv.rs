@@ -1,7 +1,7 @@
 use csv;
 
 use std::error::Error;
-
+use std::fs::File;
 
 #[derive(Debug)]
 pub struct Field<'f> {
@@ -16,46 +16,67 @@ pub enum Value {
 }
 
 type Row<'r> = Vec<Field<'r>>;
-type Frame<'f> = Vec<Row<'f>>;
+// type Frame<'f> = Vec<Row<'f>>;
 
-pub fn reader<'r>(
-    path: &str,
-    col_names: &'r Vec<&str>,
-    col_types: &'r Vec<&str>,
-) -> Result<Frame<'r>, Box<dyn Error>> {
-    let mut rdr = csv::Reader::from_path(path)?;
-    let mut data: Frame = Vec::new();
-
-    for result in rdr.records() {
-        let record = result?;
-        let row = make_row(record, col_names, col_types);
-        data.push(row);
-    }
-
-    Ok(data)
+pub struct RowIterator<'c> {
+    pub col_names: &'c Vec<&'c str>,
+    pub col_types: &'c Vec<&'c str>,
+    pub records: csv::StringRecordsIter<'c, File>
 }
 
-pub fn writer<'w>(
-    path: &str, frame: Frame<'w>
-) -> Result<(), Box<dyn Error>> {
-    let mut wtr = csv::Writer::from_path(path)?;
+impl<'c> Iterator for RowIterator<'c> {
+    type Item = Row<'c>;
 
-    for row in frame {
-        let mut out_rec: Vec<String> = Vec::new();
-
-        for field in row {
-            let val = field.value;
-            let val_as_str = match val {
-                Value::Int(v) => v.to_string(),
-                Value::Str(v) => v,
-            };
-            out_rec.push(val_as_str);
+    fn next(&mut self) -> Option<Self::Item> {
+        let record = self.records.next();
+        
+        match record {
+            Some(r) => {
+                let col_names = self.col_names;
+                let col_types = self.col_types;
+                let row = make_row(r.unwrap(), col_names, col_types);
+                return Some(row)
+            },
+            None => None
         }
+    }
+}
 
-        wtr.write_record(out_rec)?;
+pub struct RowWriter {
+    pub writer: csv::Writer<File>
+}
+
+impl RowWriter {
+    pub fn write(
+        &mut self, row: Row
+    ) -> Result<(), Box<dyn Error>> {
+        let d_row = deconstruct_row(row);
+        self.writer.write_record(d_row)?;
+        Ok(())
     }
 
-    Ok(())
+    pub fn flush(&mut self) -> Result<(), Box<dyn Error>> {
+        self.writer.flush()?;
+        Ok(())
+    }
+}
+
+
+// --------------------------------------------------------
+fn deconstruct_row(row: Row) -> Vec<String> {
+    let mut output: Vec<String> = Vec::new();
+
+    for field in row {
+        let val = field.value;
+        let v = match val {
+            Value::Int(i) => i.to_string(),
+            Value::Str(i) => i
+        };
+
+        output.push(v);
+    }
+
+    output
 }
 
 fn make_row<'r>(
@@ -76,7 +97,10 @@ fn make_row<'r>(
 }
 
 fn make_field<'f>(name: &'f str, value: Value) -> Field<'f> {
-    Field { name: name, value: value}
+    Field {
+        name: name,
+        value: value,
+    }
 }
 
 fn make_value(value: &str, given_type: &str) -> Value {
@@ -85,7 +109,7 @@ fn make_value(value: &str, given_type: &str) -> Value {
         "int" => {
             let value: i64 = value.parse().unwrap();
             Value::Int(value)
-        },
-        _ => Value::Str(value.to_string())
+        }
+        _ => Value::Str(value.to_string()),
     }
 }

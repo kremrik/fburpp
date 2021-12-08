@@ -1,3 +1,3 @@
-pub use self::csv::{reader, writer};
+pub use self::csv::{RowIterator, RowWriter};
 
 mod csv;
