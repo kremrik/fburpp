@@ -1,22 +1,8 @@
+use crate::data::{Field, Row, Value};
 use csv;
 
 use std::error::Error;
 use std::fs::File;
-
-#[derive(Debug)]
-pub struct Field<'f> {
-    name: &'f str,
-    value: Value,
-}
-
-#[derive(Debug)]
-pub enum Value {
-    Str(String),
-    Int(i64),
-}
-
-type Row<'r> = Vec<Field<'r>>;
-// type Frame<'f> = Vec<Row<'f>>;
 
 pub struct RowIterator<'c> {
     pub col_names: &'c Vec<&'c str>,

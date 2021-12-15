@@ -1,7 +1,7 @@
 #[derive(Debug)]
 pub struct Field<'f> {
-    name: &'f str,
-    value: Value,
+    pub name: &'f str,
+    pub value: Value,
 }
 
 #[derive(Debug)]
@@ -10,4 +10,4 @@ pub enum Value {
     Int(i64),
 }
 
-type Row<'r> = Vec<Field<'r>>;
+pub type Row<'r> = Vec<Field<'r>>;
