@@ -1,29 +1,23 @@
-use fburpp::read_write::{RowIterator, RowWriter};
-use fburpp::data::{select};
-use csv;
+use fburpp::read_write::CSV;
 
-fn main() {
-    let path = "/home/kyle/projects/fburpp/rust/example.csv";
-    let o_path = "/home/kyle/projects/fburpp/rust/example.out.csv";
+use std::error::Error;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let input_path = "/home/kyle/projects/fburpp/rust/example.csv";
+    let output_path = "/home/kyle/projects/fburpp/rust/example.out.csv";
     let col_names = vec!["foo", "bar", "baz"];
     let col_types = vec!["str", "int", "str"];
-    let mut rdr = csv::Reader::from_path(path).unwrap();
-    let wtr = csv::Writer::from_path(o_path).unwrap();
-    let records = rdr.records();
+    let select = vec!["foo", "bar"];
 
-    let rowiter = RowIterator { 
-        col_names: &col_names, 
-        col_types: &col_types, 
-        records 
+    let job = CSV {
+        input_path,
+        output_path,
+        col_names,
+        col_types,
+        select,
     };
 
-    let mut rowwriter = RowWriter { writer: wtr };
-    let keep_cols = vec!["foo"];
+    job.run()?;
 
-    for row in rowiter {
-        let new_row = select(row, &keep_cols);
-        rowwriter.write(new_row).unwrap();
-    }
-
-    rowwriter.flush().unwrap();
+    Ok(())
 }

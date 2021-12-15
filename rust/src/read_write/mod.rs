@@ -1,2 +1,2 @@
 mod csv;
-pub use self::csv::{RowIterator, RowWriter};
+pub use self::csv::CSV;

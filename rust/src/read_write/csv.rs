@@ -1,71 +1,40 @@
-use crate::data::{Field, Row, Value};
+use crate::data::{select, Field, Row, Value};
 use csv;
 
 use std::error::Error;
-use std::fs::File;
 
-// --------------------------------------------------------
-pub struct RowIterator<'c> {
-    pub col_names: &'c Vec<&'c str>,
-    pub col_types: &'c Vec<&'c str>,
-    pub records: csv::StringRecordsIter<'c, File>
+// ugliest possible thing
+pub struct CSV<'c> {
+    pub input_path: &'c str,
+    pub output_path: &'c str,
+    pub col_names: Vec<&'c str>,
+    pub col_types: Vec<&'c str>,
+    pub select: Vec<&'c str>,
 }
 
-impl<'c> Iterator for RowIterator<'c> {
-    type Item = Row<'c>;
+impl<'c> CSV<'c> {
+    pub fn run(&self) -> Result<(), Box<dyn Error>> {
+        let mut rdr = csv::Reader::from_path(self.input_path).unwrap();
+        let mut wtr = csv::Writer::from_path(self.output_path).unwrap();
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let record = self.records.next();
-        
-        match record {
-            Some(r) => {
-                let col_names = self.col_names;
-                let col_types = self.col_types;
-                let row = make_row(r.unwrap(), col_names, col_types);
-                return Some(row)
-            },
-            None => None
+        let records = rdr.records();
+
+        for result in records {
+            let str_row = result?;
+            let row = make_row(str_row, &self.col_names, &self.col_types);
+
+            let out_row = select(row, &self.select);
+            let out_str_row = deconstruct_row(out_row);
+            wtr.write_record(out_str_row)?;
         }
-    }
-}
 
-pub struct RowWriter {
-    pub writer: csv::Writer<File>
-}
+        wtr.flush()?;
 
-impl RowWriter {
-    pub fn write(
-        &mut self, row: Row
-    ) -> Result<(), Box<dyn Error>> {
-        let d_row = deconstruct_row(row);
-        self.writer.write_record(d_row)?;
-        Ok(())
-    }
-
-    pub fn flush(&mut self) -> Result<(), Box<dyn Error>> {
-        self.writer.flush()?;
         Ok(())
     }
 }
-
 
 // --------------------------------------------------------
-fn deconstruct_row(row: Row) -> Vec<String> {
-    let mut output: Vec<String> = Vec::new();
-
-    for field in row {
-        let val = field.value;
-        let v = match val {
-            Value::Int(i) => i.to_string(),
-            Value::Str(i) => i
-        };
-
-        output.push(v);
-    }
-
-    output
-}
-
 fn make_row<'r>(
     record: csv::StringRecord,
     col_names: &'r Vec<&str>,
@@ -81,6 +50,22 @@ fn make_row<'r>(
     }
 
     row
+}
+
+fn deconstruct_row(row: Row) -> Vec<String> {
+    let mut output: Vec<String> = Vec::new();
+
+    for field in row {
+        let val = field.value;
+        let v = match val {
+            Value::Int(i) => i.to_string(),
+            Value::Str(i) => i,
+        };
+
+        output.push(v);
+    }
+
+    output
 }
 
 fn make_field<'f>(name: &'f str, value: Value) -> Field<'f> {
