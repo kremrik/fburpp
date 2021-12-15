@@ -1,4 +1,4 @@
-use fburpp::{RowIterator, RowWriter};
+use fburpp::read_write::{RowIterator, RowWriter};
 use csv;
 
 fn main() {
