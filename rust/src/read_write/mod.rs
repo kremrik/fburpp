@@ -1,3 +1,2 @@
-pub use self::csv::{reader, writer};
-
 mod csv;
+pub use self::csv::CSV;
