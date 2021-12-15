@@ -4,6 +4,7 @@ use csv;
 use std::error::Error;
 use std::fs::File;
 
+// --------------------------------------------------------
 pub struct RowIterator<'c> {
     pub col_names: &'c Vec<&'c str>,
     pub col_types: &'c Vec<&'c str>,

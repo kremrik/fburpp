@@ -1,4 +1,5 @@
 use fburpp::read_write::{RowIterator, RowWriter};
+use fburpp::data::{select};
 use csv;
 
 fn main() {
@@ -17,9 +18,11 @@ fn main() {
     };
 
     let mut rowwriter = RowWriter { writer: wtr };
+    let keep_cols = vec!["foo"];
 
     for row in rowiter {
-        rowwriter.write(row).unwrap();
+        let new_row = select(row, &keep_cols);
+        rowwriter.write(new_row).unwrap();
     }
 
     rowwriter.flush().unwrap();
