@@ -7,9 +7,9 @@ use std::error::Error;
 pub struct CSV<'c> {
     pub input_path: &'c str,
     pub output_path: &'c str,
-    pub col_names: Vec<&'c str>,
-    pub col_types: Vec<&'c str>,
-    pub select: Vec<&'c str>,
+    pub col_names: &'c Vec<String>,
+    pub col_types: &'c Vec<String>,
+    pub select: &'c Vec<String>,
 }
 
 impl<'c> CSV<'c> {
@@ -37,8 +37,8 @@ impl<'c> CSV<'c> {
 // --------------------------------------------------------
 fn make_row<'r>(
     record: csv::StringRecord,
-    col_names: &'r Vec<&str>,
-    col_types: &'r Vec<&str>,
+    col_names: &'r Vec<String>,
+    col_types: &'r Vec<String>,
 ) -> Row<'r> {
     let mut row: Row = Vec::new();
 
