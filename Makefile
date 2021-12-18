@@ -1,7 +1,7 @@
 .PHONY: build-rust-dev
-build-rust-dev:
-	@cd rust && cargo build && cd ..
+build-rust:
+	@cd rust && cargo build --release && cd ..
 
 .PHONY: build-bindings
 build-bindings:
-	@cd rust && maturin develop && cd ..
+	@cd rust && maturin develop --release && cd ..
