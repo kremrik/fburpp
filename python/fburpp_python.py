@@ -1,3 +1,5 @@
+from fburpp import fburpp_execute
+
 from enum import Enum
 from json import dumps
 from typing import List, Optional
@@ -48,7 +50,7 @@ class CSV(Fburpp):
 
     def run(self) -> None:
         plan = dumps(self.plan)
-        # call to rust fburpp with plan
+        fburpp_execute(plan)
 
     def read(
         self, 
