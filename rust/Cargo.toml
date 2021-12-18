@@ -13,6 +13,7 @@ edition = "2018"
 [dependencies]
 csv = "1.1"
 serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1.0"}
 
 [dependencies.pyo3]
 version = "0.15.1"
