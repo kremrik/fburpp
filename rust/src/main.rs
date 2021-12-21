@@ -1,17 +1,32 @@
 use fburpp::execute;
-
-use serde_json::json;
+use fburpp::job::{Job};
 
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let j = json!({
+    let j = r#"
+    {
         "input_path": "/home/kyle/projects/fburpp/rust/example.csv",
+        "structure": {
+            "col_names": ["foo", "bar", "baz"],
+            "col_types": ["str", "int", "str"]
+        },
         "output_path": "/home/kyle/projects/fburpp/rust/example.out.csv",
-        "col_names": ["foo", "bar", "baz"],
-        "col_types": ["str", "int", "str"],
-        "select": ["foo", "bar"]
-    });
+        "select": {
+            "fields": ["foo", "bar"]
+        },
+        "filter": [
+            {
+                "field": "bar",
+                "comparator": ">",
+                "value": "1"
+            }
+        ]
+    }
+    "#;
+
+    // let job: Job = serde_json::from_str(j)?;
+    // println!("{:?}", job.input_path);
 
     execute(&j.to_string()).unwrap();
 
