@@ -1,5 +1,4 @@
-// use fburpp::execute;
-// use fburpp::job::{Job};
+use fburpp::job::{Job};
 use fburpp::csv::{
     make_reader,
     make_writer,
@@ -8,10 +7,12 @@ use fburpp::csv::{
 };
 use fburpp::data::{select};
 
+use serde_json;
+
 use std::error::Error;
 
-fn make_fake_job() -> String {
-    r#"
+fn make_fake_job() -> Job {
+    let jstr = r#"
     {
         "input_path": "/home/kyle/projects/fburpp/rust/example.csv",
         "structure": {
@@ -30,37 +31,34 @@ fn make_fake_job() -> String {
             }
         ]
     }
-    "#.to_string()
+    "#.to_string();
+
+    let j: Job = serde_json::from_str(&jstr).unwrap();
+    return j
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let input_path = "/home/kyle/projects/fburpp/rust/example.csv";
-    let output_path = "/home/kyle/projects/fburpp/rust/example.out.csv";
-    let col_names: Vec<String> = vec![
-        String::from("foo"), 
-        String::from("bar"), 
-        String::from("baz")
-    ];
-    let col_types: Vec<String> = vec![
-        String::from("str"), 
-        String::from("int"), 
-        String::from("str")
-    ];
+fn test_csv() -> Result<(), Box<dyn Error>> {
+    let job = make_fake_job();
 
-    let select_cols = vec![
-        String::from("foo"),
-        String::from("baz"),
-    ];
+    let mut reader = make_reader(&job.input_path);
+    let mut writer = make_writer(&job.output_path);
+    let csvrows = CsvRows::new(
+        &mut reader,
+        &job.structure.col_names,
+        &job.structure.col_types
+    );
 
-    let mut reader = make_reader(&input_path);
-    let mut writer = make_writer(&output_path);
-    let csvrows = CsvRows::new(&mut reader, &col_names, &col_types);
+    let sel = job.select;
 
     for row in csvrows {
-        let sel_row = select(row, &select_cols);
+        let sel_row = select(row, &sel);
         let record = row_to_record(sel_row);
         writer.write_record(record)?;
     }
 
     Ok(())
+}
+
+fn main() {
+    test_csv().unwrap();
 }
