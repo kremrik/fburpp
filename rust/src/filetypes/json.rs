@@ -1,6 +1,6 @@
-use crate::data::{Field, Row, Value};
+use crate::data::{Row, Value};
 
-use serde_json::{Result, Value as JsonValue, Map, Number, json};
+use serde_json::{Value as JsonValue, Map, json};
 
 use std::fs::File;
 use std::io::{prelude::*, BufReader, BufWriter};
