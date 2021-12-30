@@ -1,3 +1,7 @@
+use crate::job::{Filter, Select};
+
+pub type Row<'r> = Vec<Field<'r>>;
+
 #[derive(Debug)]
 pub struct Field<'f> {
     pub name: &'f str,
@@ -10,16 +14,29 @@ pub enum Value {
     Int(i64),
 }
 
-pub type Row<'r> = Vec<Field<'r>>;
+pub fn select<'s>(row: Row<'s>, s: &Option<Select>) -> Row<'s> {
+    match s {
+        None => row,
+        Some(select) => {
+            let mut output: Row = Vec::new();
+            let fields = &select.fields;
 
-pub fn select<'s>(row: Row<'s>, fields: &Vec<String>) -> Row<'s> {
-    let mut output: Row = Vec::new();
+            for field in row {
+                if fields.contains(&field.name.to_string()) {
+                    output.push(field);
+                }
+            }
 
-    for field in row {
-        if fields.contains(&field.name.to_string()) {
-            output.push(field);
-        }
+            output
+        },
     }
+}
 
-    output
+pub fn filter<'f>(
+    row: Row<'f>, f: &Option<Vec<Filter>>
+) -> Option<Row<'f>> {
+    match f {
+        None => Some(row),
+        Some(_filts) => Some(row)
+    }
 }

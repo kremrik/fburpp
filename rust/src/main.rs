@@ -1,10 +1,14 @@
-use fburpp::execute;
 use fburpp::job::{Job};
+use fburpp::{csv, json};
+use fburpp::data::{select};
+
+use serde_json;
 
 use std::error::Error;
+use std::io::{prelude::*};
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let j = r#"
+fn make_fake_job() -> Job {
+    let jstr = r#"
     {
         "input_path": "/home/kyle/projects/fburpp/rust/example.csv",
         "structure": {
@@ -23,12 +27,37 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         ]
     }
-    "#;
+    "#.to_string();
 
-    // let job: Job = serde_json::from_str(j)?;
-    // println!("{:?}", job.input_path);
+    let j: Job = serde_json::from_str(&jstr).unwrap();
+    return j
+}
 
-    execute(&j.to_string()).unwrap();
+fn test_csv() -> Result<(), Box<dyn Error>> {
+    let job = make_fake_job();
+
+    let mut reader = csv::make_reader(&job.input_path);
+    // let mut writer = csv::make_writer(&job.output_path);
+    let mut writer = json::make_writer(&job.output_path);
+    let csvrows = csv::CsvRows::new(
+        &mut reader,
+        &job.structure.col_names,
+        &job.structure.col_types
+    );
+
+    let sel = job.select;
+
+    for row in csvrows {
+        let sel_row = select(row, &sel);
+        // let record = csv::row_to_record(sel_row);
+        // writer.write_record(record)?;
+        let record = json::row_to_object(sel_row);
+        writer.write_all(record.as_bytes())?;
+    }
 
     Ok(())
+}
+
+fn main() {
+    test_csv().unwrap();
 }
