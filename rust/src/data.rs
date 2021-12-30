@@ -1,5 +1,7 @@
 use crate::job::{Filter, Select};
 
+pub type Row<'r> = Vec<Field<'r>>;
+
 #[derive(Debug)]
 pub struct Field<'f> {
     pub name: &'f str,
@@ -11,8 +13,6 @@ pub enum Value {
     Str(String),
     Int(i64),
 }
-
-pub type Row<'r> = Vec<Field<'r>>;
 
 pub fn select<'s>(row: Row<'s>, s: &Option<Select>) -> Row<'s> {
     match s {

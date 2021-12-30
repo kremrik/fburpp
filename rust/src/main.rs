@@ -1,15 +1,11 @@
 use fburpp::job::{Job};
-use fburpp::csv::{
-    make_reader,
-    make_writer,
-    row_to_record,
-    CsvRows,
-};
+use fburpp::{csv, json};
 use fburpp::data::{select};
 
 use serde_json;
 
 use std::error::Error;
+use std::io::{prelude::*};
 
 fn make_fake_job() -> Job {
     let jstr = r#"
@@ -40,9 +36,10 @@ fn make_fake_job() -> Job {
 fn test_csv() -> Result<(), Box<dyn Error>> {
     let job = make_fake_job();
 
-    let mut reader = make_reader(&job.input_path);
-    let mut writer = make_writer(&job.output_path);
-    let csvrows = CsvRows::new(
+    let mut reader = csv::make_reader(&job.input_path);
+    // let mut writer = csv::make_writer(&job.output_path);
+    let mut writer = json::make_writer(&job.output_path);
+    let csvrows = csv::CsvRows::new(
         &mut reader,
         &job.structure.col_names,
         &job.structure.col_types
@@ -52,8 +49,10 @@ fn test_csv() -> Result<(), Box<dyn Error>> {
 
     for row in csvrows {
         let sel_row = select(row, &sel);
-        let record = row_to_record(sel_row);
-        writer.write_record(record)?;
+        // let record = csv::row_to_record(sel_row);
+        // writer.write_record(record)?;
+        let record = json::row_to_object(sel_row);
+        writer.write_all(record.as_bytes())?;
     }
 
     Ok(())

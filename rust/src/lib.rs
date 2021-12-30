@@ -3,7 +3,7 @@ pub mod fburpp;
 pub mod job;
 pub mod filetypes;
 
-pub use filetypes::csv;
+pub use filetypes::{csv, json};
 
 // pub use fburpp::execute;
 
