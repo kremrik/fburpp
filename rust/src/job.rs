@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use std::collections::HashMap;
+
 #[derive(Serialize, Deserialize)]
 pub struct Job {
     pub input_path: String,
@@ -13,6 +15,11 @@ pub struct Job {
 pub struct CsvFile {
     pub col_names: Vec<String>,
     pub col_types: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct JsonLinesFile {
+    pub schema: HashMap<String, String>
 }
 
 #[derive(Serialize, Deserialize)]

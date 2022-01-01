@@ -19,6 +19,7 @@ pub fn row_to_record(row: Row) -> Vec<String> {
         let v = match val {
             Value::Int(i) => i.to_string(),
             Value::Str(i) => i,
+            Value::Null => String::from("")
         };
 
         output.push(v);
@@ -45,7 +46,7 @@ impl<'c> CsvRows<'c> {
 }
 
 impl<'c> Iterator for CsvRows<'c> {
-    type Item = Row<'c>;
+    type Item = Row;
 
     fn next(&mut self) -> Option<Self::Item> {
         let res = self.records.next();
@@ -67,7 +68,7 @@ fn make_row<'r>(
     record: csv::StringRecord,
     col_names: &'r Vec<String>,
     col_types: &'r Vec<String>,
-) -> Row<'r> {
+) -> Row {
     let mut row: Row = Vec::new();
 
     let val_name_typ = record.iter().zip(col_names.iter()).zip(col_types.iter());
@@ -80,9 +81,9 @@ fn make_row<'r>(
     row
 }
 
-fn make_field<'f>(name: &'f str, value: Value) -> Field<'f> {
+fn make_field<'f>(name: &'f str, value: Value) -> Field {
     Field {
-        name: name,
+        name: name.to_string(),
         value: value,
     }
 }
@@ -93,7 +94,8 @@ fn make_value(value: &str, given_type: &str) -> Value {
         "int" => {
             let value: i64 = value.parse().unwrap();
             Value::Int(value)
-        }
+        },
+        "null" => Value::Null,
         _ => Value::Str(value.to_string()),
     }
 }

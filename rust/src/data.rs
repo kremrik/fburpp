@@ -1,10 +1,10 @@
 use crate::job::{Filter, Select};
 
-pub type Row<'r> = Vec<Field<'r>>;
+pub type Row = Vec<Field>;
 
 #[derive(Debug)]
-pub struct Field<'f> {
-    pub name: &'f str,
+pub struct Field {
+    pub name: String,
     pub value: Value,
 }
 
@@ -12,9 +12,10 @@ pub struct Field<'f> {
 pub enum Value {
     Str(String),
     Int(i64),
+    Null,
 }
 
-pub fn select<'s>(row: Row<'s>, s: &Option<Select>) -> Row<'s> {
+pub fn select(row: Row, s: &Option<Select>) -> Row {
     match s {
         None => row,
         Some(select) => {
@@ -32,9 +33,9 @@ pub fn select<'s>(row: Row<'s>, s: &Option<Select>) -> Row<'s> {
     }
 }
 
-pub fn filter<'f>(
-    row: Row<'f>, f: &Option<Vec<Filter>>
-) -> Option<Row<'f>> {
+pub fn filter(
+    row: Row, f: &Option<Vec<Filter>>
+) -> Option<Row> {
     match f {
         None => Some(row),
         Some(_filts) => Some(row)

@@ -10,3 +10,4 @@ sphinx/build
 tmp
 *.csv
 .json
+*.json
