@@ -1,6 +1,7 @@
 use crate::data::{Field, Row, Value};
 use csv::{Reader, StringRecordsIter, Writer};
 
+use std::collections::HashMap;
 use std::fs::{File};
 
 pub fn make_reader(path: &str) -> Reader<File> {
@@ -30,18 +31,16 @@ pub fn row_to_record(row: Row) -> Vec<String> {
 
 pub struct CsvRows<'c> {
     records: StringRecordsIter<'c, File>,
-    col_names: &'c Vec<String>,
-    col_types: &'c Vec<String>,
+    schema: &'c HashMap<String, String>,
 }
 
 impl<'c> CsvRows<'c> {
     pub fn new(
         reader: &'c mut Reader<File>,
-        col_names: &'c Vec<String>,
-        col_types: &'c Vec<String>,
+        schema: &'c HashMap<String, String>,
     ) -> CsvRows<'c> {
         let records = reader.records();
-        CsvRows { records, col_names, col_types }
+        CsvRows { records, schema }
     }
 }
 
@@ -53,9 +52,8 @@ impl<'c> Iterator for CsvRows<'c> {
         match res {
             Some(record) => {
                 let rec = record.unwrap();
-                let names = self.col_names;
-                let types = self.col_types;
-                let row = make_row(rec, names, types);
+                let schema = self.schema;
+                let row = make_row(rec, schema);
                 Some(row)
             },
             None => None,
@@ -66,12 +64,13 @@ impl<'c> Iterator for CsvRows<'c> {
 // --------------------------------------------------------
 fn make_row<'r>(
     record: csv::StringRecord,
-    col_names: &'r Vec<String>,
-    col_types: &'r Vec<String>,
+    schema: &'r HashMap<String, String>
 ) -> Row {
     let mut row: Row = Vec::new();
+    let col_names = schema.keys();
+    let col_types = schema.values();
 
-    let val_name_typ = record.iter().zip(col_names.iter()).zip(col_types.iter());
+    let val_name_typ = record.iter().zip(col_names).zip(col_types);
     for ((val, name), typ) in val_name_typ {
         let value = make_value(val, typ);
         let field = make_field(&name, value);
