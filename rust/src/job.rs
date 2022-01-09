@@ -7,11 +7,13 @@ use std::collections::HashMap;
 use std::error::Error;
 
 
+#[derive(Debug)]
 #[derive(Serialize, Deserialize)]
 pub struct Select {
     pub fields: Vec<String>
 }
 
+#[derive(Debug)]
 #[derive(Serialize, Deserialize)]
 pub struct Filter {
     pub field: String,
@@ -19,37 +21,51 @@ pub struct Filter {
     pub value: String,
 }
 
+#[derive(Debug)]
+#[derive(Serialize, Deserialize)]
+pub enum FileType {
+    csv { col_names: Vec<String>, col_types: Vec<String> },
+    // json { schema: HashMap<String, String> }
+}
+
+#[derive(Debug)]
 #[derive(Serialize, Deserialize)]
 pub struct Job {
     pub input_path: String,
-    pub file_type: String,
-    pub schema: HashMap<String, String>,
+    pub input_type: String,
+    pub schema: FileType,
     pub output_path: String,
+    pub output_type: String,
     pub select: Option<Select>,
     pub filter: Option<Vec<Filter>>,
 }
 
 impl Job {
-    pub fn execute(&mut self) -> Result<(), Box<dyn Error>> {
-        if self.file_type == "csv" {
-            let mut reader = csv::make_reader(&self.input_path);
-            let mut writer = csv::make_writer(&self.output_path);
-            let csvrows = csv::CsvRows::new(&mut reader, &self.schema);
+    pub fn execute(&mut self) {
+        let mut handler = match self.input_type.as_str() {
+            "csv" => csv::make_file_handler(&self.input_path),
+            _ => panic!("CRAP!")
+        };
 
-            let sel = &self.select;
+        let rows = match &self.schema {
+            FileType::csv { col_names, col_types } => {
+                csv::CsvRows::new(&mut handler, &col_names, &col_types)
+            },
+        };
 
-            for row in csvrows {
-                let sel_row = select(row, &sel);
-                let record = csv::row_to_record(sel_row);
-                writer.write_record(record)?;
-            }
+        let mut writer = match self.output_type.as_str() {
+            "csv" => {
+                csv::CsvWriter::new(&self.output_path)
+            },
+            _ => panic!("CRAP!")
+        };
 
-        Ok(())
+        let sel = &self.select;
 
-        } else if self.file_type == "json" {
-            Ok(())
-        } else {
-            Ok(())
+        for row in rows {
+            let sel_row = select(row, &sel);
+            writer.write(sel_row).unwrap();
         }
+
     }
 }

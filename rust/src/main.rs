@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use fburpp::job::{Job};
-use fburpp::{csv, json};
+use fburpp::{csv, job, json};
 use fburpp::data::{select};
 
 use serde_json;
@@ -14,13 +14,15 @@ fn fake_job() -> Job {
     let jstr = r#"
     {
         "input_path": "/home/kyle/projects/fburpp/rust/example.csv",
-        "file_type": "csv",
+        "input_type": "csv",
         "schema": {
-            "foo": "str",
-            "bar": "int",
-            "baz": "str"
+            "csv": {
+                "col_names": ["foo", "bar", "baz"],
+                "col_types": ["str", "int", "str"]
+            }
         },
         "output_path": "/home/kyle/projects/fburpp/rust/csv_to_csv.out.csv",
+        "output_type": "csv",
         "select": {
             "fields": ["foo", "bar"]
         },
@@ -38,8 +40,12 @@ fn fake_job() -> Job {
     return j
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn test_job() -> Result<(), Box<dyn Error>> {
     let mut job = fake_job();
-    job.execute()?;
+    job.execute();
     Ok(())
+}
+
+fn main() {
+    test_job().unwrap()
 }

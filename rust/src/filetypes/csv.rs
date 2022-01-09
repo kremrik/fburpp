@@ -1,10 +1,10 @@
 use crate::data::{Field, Row, Value};
 use csv::{Reader, StringRecordsIter, Writer};
 
-use std::collections::HashMap;
+use std::error::Error;
 use std::fs::{File};
 
-pub fn make_reader(path: &str) -> Reader<File> {
+pub fn make_file_handler(path: &str) -> Reader<File> {
     Reader::from_path(path).unwrap()
 }
 
@@ -31,16 +31,18 @@ pub fn row_to_record(row: Row) -> Vec<String> {
 
 pub struct CsvRows<'c> {
     records: StringRecordsIter<'c, File>,
-    schema: &'c HashMap<String, String>,
+    col_names: &'c Vec<String>,
+    col_types: &'c Vec<String>,
 }
 
 impl<'c> CsvRows<'c> {
     pub fn new(
         reader: &'c mut Reader<File>,
-        schema: &'c HashMap<String, String>,
+        col_names: &'c Vec<String>,
+        col_types: &'c Vec<String>,
     ) -> CsvRows<'c> {
         let records = reader.records();
-        CsvRows { records, schema }
+        CsvRows { records, col_names, col_types }
     }
 }
 
@@ -52,8 +54,9 @@ impl<'c> Iterator for CsvRows<'c> {
         match res {
             Some(record) => {
                 let rec = record.unwrap();
-                let schema = self.schema;
-                let row = make_row(rec, schema);
+                let names = self.col_names;
+                let types = self.col_types;
+                let row = make_row(rec, names, types);
                 Some(row)
             },
             None => None,
@@ -61,16 +64,32 @@ impl<'c> Iterator for CsvRows<'c> {
     }
 }
 
+pub struct CsvWriter {
+    writer: Writer<File>
+}
+
+impl CsvWriter {
+    pub fn new(path: &str) -> CsvWriter {
+        let writer = Writer::from_path(path).unwrap();
+        return CsvWriter { writer }
+    }
+
+    pub fn write(&mut self, row: Row) -> Result<(), Box<dyn Error>> {
+        let output = row_to_record(row);
+        self.writer.write_record(output)?;
+        Ok(())
+    }
+}
+
 // --------------------------------------------------------
 fn make_row<'r>(
     record: csv::StringRecord,
-    schema: &'r HashMap<String, String>
+    col_names: &'r Vec<String>,
+    col_types: &'r Vec<String>,
 ) -> Row {
     let mut row: Row = Vec::new();
-    let col_names = schema.keys();
-    let col_types = schema.values();
 
-    let val_name_typ = record.iter().zip(col_names).zip(col_types);
+    let val_name_typ = record.iter().zip(col_names.iter()).zip(col_types.iter());
     for ((val, name), typ) in val_name_typ {
         let value = make_value(val, typ);
         let field = make_field(&name, value);
