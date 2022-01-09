@@ -38,28 +38,8 @@ fn fake_job() -> Job {
     return j
 }
 
-
-fn test_job() -> Result<(), Box<dyn Error>> {
-    let job = fake_job();
-
-    let mut reader = csv::make_reader(&job.input_path);
-    let mut writer = csv::make_writer(&job.output_path);
-    let csvrows = csv::CsvRows::new(
-        &mut reader,
-        &job.schema,
-    );
-
-    let sel = job.select;
-
-    for row in csvrows {
-        let sel_row = select(row, &sel);
-        let record = csv::row_to_record(sel_row);
-        writer.write_record(record)?;
-    }
-
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut job = fake_job();
+    job.execute()?;
     Ok(())
-}
-
-fn main() {
-    test_job().unwrap();
 }
