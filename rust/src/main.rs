@@ -6,11 +6,9 @@ use fburpp::data::{select};
 
 use serde_json;
 
-use std::collections::HashMap;
 use std::error::Error;
-use std::io::{prelude::*};
 
-fn fake_job() -> Job {
+fn job_csv_to_csv() -> Job {
     let jstr = r#"
     {
         "input_path": "/home/kyle/projects/fburpp/rust/example.csv",
@@ -25,14 +23,56 @@ fn fake_job() -> Job {
         "output_type": "csv",
         "select": {
             "fields": ["foo", "bar"]
-        },
-        "filter": [
-            {
-                "field": "bar",
-                "comparator": ">",
-                "value": "1"
+        }
+    }
+    "#.to_string();
+
+    let j: Job = serde_json::from_str(&jstr).unwrap();
+    return j
+}
+
+fn job_json_to_csv() -> Job {
+    let jstr = r#"
+    {
+        "input_path": "/home/kyle/projects/fburpp/rust/example.json",
+        "input_type": "json",
+        "schema": {
+            "json": {
+                "schema": {
+                    "foo": "str",
+                    "bar": "int",
+                    "baz": "str"
+                }
             }
-        ]
+        },
+        "output_path": "/home/kyle/projects/fburpp/rust/json_to_csv.out.csv",
+        "output_type": "csv",
+        "select": {
+            "fields": ["foo", "bar"]
+        }
+    }
+    "#.to_string();
+
+    let j: Job = serde_json::from_str(&jstr).unwrap();
+    return j
+}
+
+fn job_csv_to_json() -> Job {
+    let jstr = r#"
+    {
+        "input_path": "/home/kyle/projects/fburpp/rust/example.csv",
+        "input_type": "csv",
+        "schema": {
+            "csv": {
+                "col_names": ["foo", "bar", "baz"],
+                "col_types": ["str", "int", "str"]
+            }
+        },
+        "output_path": "/home/kyle/projects/fburpp/rust/csv_to_json.out.csv",
+        "output_type": "json",
+        "select": {
+            "fields": ["foo", "bar"]
+        }
     }
     "#.to_string();
 
@@ -41,8 +81,14 @@ fn fake_job() -> Job {
 }
 
 fn test_job() -> Result<(), Box<dyn Error>> {
-    let mut job = fake_job();
-    job.execute();
+    let mut csv_to_csv = job_csv_to_csv();
+    let mut json_to_csv = job_json_to_csv();
+    let mut csv_to_json = job_csv_to_json();
+
+    csv_to_csv.execute();
+    json_to_csv.execute();
+    csv_to_json.execute();
+
     Ok(())
 }
 

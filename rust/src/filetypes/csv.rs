@@ -1,15 +1,12 @@
-use crate::data::{Field, Row, Value};
+use crate::data::{Field, Row, Value, Writer as RowWriter};
 use csv::{Reader, StringRecordsIter, Writer};
 
 use std::error::Error;
 use std::fs::{File};
 
-pub fn make_file_handler(path: &str) -> Reader<File> {
-    Reader::from_path(path).unwrap()
-}
 
-pub fn make_writer(path: &str) -> Writer<File> {
-    Writer::from_path(path).unwrap()
+pub fn make_reader(path: &str) -> Reader<File> {
+    Reader::from_path(path).unwrap()
 }
 
 pub fn row_to_record(row: Row) -> Vec<String> {
@@ -73,11 +70,12 @@ impl CsvWriter {
         let writer = Writer::from_path(path).unwrap();
         return CsvWriter { writer }
     }
+}
 
-    pub fn write(&mut self, row: Row) -> Result<(), Box<dyn Error>> {
+impl RowWriter for CsvWriter {
+    fn write(&mut self, row: Row) {
         let output = row_to_record(row);
-        self.writer.write_record(output)?;
-        Ok(())
+        self.writer.write_record(output).unwrap();
     }
 }
 
