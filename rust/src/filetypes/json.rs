@@ -1,8 +1,9 @@
-use crate::data::{Field, Row, Value};
+use crate::data::{Field, Row, Value, Writer as RowWriter};
 
 use serde_json::{Value as JsonValue, Map, json};
 
 use std::collections::HashMap;
+use std::error::Error;
 use std::fs::File;
 use std::io::{prelude::*, BufReader, BufWriter, Lines};
 
@@ -11,11 +12,57 @@ pub fn make_reader(path: &str) -> BufReader<File> {
     BufReader::new(file)
 }
 
-pub fn make_writer(path: &str) -> BufWriter<File> {
-    let file = File::create(path).unwrap();
-    BufWriter::new(file)
+pub struct JsonRows<'j> {
+    lines: Lines<BufReader<File>>,
+    schema: &'j HashMap<String, String>,
 }
 
+impl<'j> JsonRows<'j> {
+    pub fn new(
+        buffer: BufReader<File>,
+        schema: &HashMap<String, String>
+    ) -> JsonRows {
+        let lines = buffer.lines();
+        JsonRows { lines, schema }
+    }
+}
+
+impl<'j> Iterator for JsonRows<'j> {
+    type Item = Row;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let res = self.lines.next();
+        match res {
+            Some(line) => {
+                let l = line.unwrap();
+                let row = make_row(l, &self.schema);
+                Some(row)
+            },
+            None => None
+        }
+    }
+}
+
+pub struct JsonWriter {
+    writer: BufWriter<File>
+}
+
+impl JsonWriter {
+    pub fn new(path: &str) -> JsonWriter {
+        let writer = BufWriter::new(File::create(path).unwrap());
+        return JsonWriter { writer }
+    }
+}
+
+impl RowWriter for JsonWriter {
+    fn write(&mut self, row: Row) {
+        let output = row_to_object(row);
+        let outputbytes = output.as_bytes();
+        self.writer.write_all(outputbytes).unwrap();
+    }
+}
+
+// --------------------------------------------------------
 pub fn row_to_object(row: Row) -> String {
     let mut output = Map::new();
 
@@ -32,38 +79,6 @@ pub fn row_to_object(row: Row) -> String {
     JsonValue::Object(output).to_string() + "\n"
 }
 
-pub struct JsonRows {
-    lines: Lines<BufReader<File>>,
-    schema: HashMap<String, String>,
-}
-
-impl JsonRows {
-    pub fn new(
-        reader: BufReader<File>,
-        schema: HashMap<String, String>
-    ) -> JsonRows {
-        let lines = reader.lines();
-        JsonRows { lines, schema }
-    }
-}
-
-impl Iterator for JsonRows {
-    type Item = Row;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let res = self.lines.next();
-        match res {
-            Some(line) => {
-                let l = line.unwrap();
-                let row = make_row(l, &self.schema);
-                Some(row)
-            },
-            None => None
-        }
-    }
-}
-
-// --------------------------------------------------------
 fn make_row(
     line: String, schema: &HashMap<String, String>
 ) -> Row {

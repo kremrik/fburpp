@@ -1,5 +1,7 @@
 use crate::job::{Filter, Select};
 
+use std::error::Error;
+
 pub type Row = Vec<Field>;
 
 #[derive(Debug)]
@@ -13,6 +15,10 @@ pub enum Value {
     Str(String),
     Int(i64),
     Null,
+}
+
+pub trait Writer {
+    fn write(&mut self, row: Row) {}
 }
 
 pub fn select(row: Row, s: &Option<Select>) -> Row {
